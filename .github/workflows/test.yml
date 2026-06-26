@@ -17,6 +17,7 @@ jobs:
           go-version: '1.26.3'
 
       - name: Run Test Coverage
+        shell: bash
         run: go test -v -coverprofile=coverage.txt ./...
 
       - name: Upload coverage artifact
