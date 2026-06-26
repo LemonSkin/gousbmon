@@ -6,6 +6,8 @@ It is heavily inspired by the [USBMonitor](https://github.com/Lemon-Skin/USBMoni
 
 Currently it only supports Windows as that is what I have needed it for, but I plan on adding support for Linux in the near future and macOS at some point, probably in the far future.
 
+I built this because other solutions are either single-platform ([USBMon](https://github.com/rubiojr/go-usbmon)) or require additional dependencies and/or do more than I need ([gousb](https://github.com/google/gousb)).
+
 Pull requests, bug reports and feature requests are very welcome.
 
 ## Installation
