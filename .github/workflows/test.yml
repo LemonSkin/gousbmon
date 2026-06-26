@@ -2,6 +2,10 @@ name: Test
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   test:
     runs-on: windows-latest
@@ -15,7 +19,15 @@ jobs:
       - name: Run Test Coverage
         run: go test -v -coverprofile=coverage.txt ./...
 
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage
+          path: coverage.txt
+
       - name: Post Coverage to PR
+        if: github.event_name == 'pull_request'
         uses: fgrosse/go-coverage-report@v1.3.0
         with:
-          coverage-file: coverage.txt
+          coverage-artifact-name: code-coverage
+          coverage-file-name: coverage.txt
