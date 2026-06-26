@@ -1,0 +1,58 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Test",
+      "type": "shell",
+      "command": "go test ./...",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Test (verbose)",
+      "type": "shell",
+      "command": "go test -v ./...",
+      "group": "test",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Coverage: generate profile",
+      "type": "shell",
+      "command": "go test -coverprofile=coverage ./...",
+      "group": "test",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Coverage: open HTML report",
+      "type": "shell",
+      "command": "go tool cover -html=coverage",
+      "dependsOn": "Coverage: generate profile",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Vet",
+      "type": "shell",
+      "command": "go vet ./...",
+      "group": "build",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "gofmt -w .",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build example",
+      "type": "shell",
+      "command": "go build -o bin/basic ./examples/basic",
+      "group": "build",
+      "problemMatcher": ["$go"]
+    }
+  ]
+}
