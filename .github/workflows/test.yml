@@ -1,0 +1,21 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.3'
+
+      - name: Run Test Coverage
+        run: go test -v -coverprofile=coverage.txt ./...
+
+      - name: Post Coverage to PR
+        uses: fgrosse/go-coverage-report@v1.3.0
+        with:
+          coverage-file: coverage.txt
