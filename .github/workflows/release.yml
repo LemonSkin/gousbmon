@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -45,8 +45,24 @@ jobs:
           go build -o "$output" ./examples/basic
           echo "ARTIFACT=$output" >> "$GITHUB_ENV"
 
-      - name: Upload to release
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gousbmon-example-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: ${{ env.ARTIFACT }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ARTIFACT }}
+          files: dist/*
           generate_release_notes: true

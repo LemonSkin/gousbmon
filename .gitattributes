@@ -1,0 +1,10 @@
+# Force LF line endings for Go source so gofmt stays consistent across OSes.
+*.go text eol=lf
+
+# Common text files normalised to LF.
+*.mod text eol=lf
+*.sum text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
