@@ -223,26 +223,6 @@ func TestStartMonitoring_Stop(t *testing.T) {
 	m.StopMonitoring()
 }
 
-// TestWithInterval tests the functional option.
-func TestWithInterval(t *testing.T) {
-	cfg := monitorConfig{interval: DefaultCheckInterval}
-	opt := WithInterval(100 * time.Millisecond)
-	opt(&cfg)
-	if cfg.interval != 100*time.Millisecond {
-		t.Errorf("interval = %v, want 100ms", cfg.interval)
-	}
-}
-
-// TestWithInterval_Zero tests that zero interval falls back to default.
-func TestWithInterval_Zero(t *testing.T) {
-	cfg := monitorConfig{interval: DefaultCheckInterval}
-	opt := WithInterval(0)
-	opt(&cfg)
-	if cfg.interval != 0 {
-		t.Errorf("interval = %v, want 0", cfg.interval)
-	}
-}
-
 // TestChangesFromLastCheck_Error tests that detector errors are returned.
 func TestChangesFromLastCheck_Error(t *testing.T) {
 	d := &mockDetector{devices: map[string]device.Info{}}
@@ -276,25 +256,25 @@ func TestStopMonitoring_NotRunning(t *testing.T) {
 	m.StopMonitoring()
 }
 
-// TestStartMonitoring_WithInterval tests that options are applied in StartMonitoring.
+// TestStartMonitoring_WithInterval tests that monitoring starts with a custom interval.
 func TestStartMonitoring_WithInterval(t *testing.T) {
 	d := &mockDetector{devices: map[string]device.Info{}}
 	m, _ := NewWithDetector(d)
 
 	// Use a very short interval so the ticker fires quickly
-	if err := m.StartMonitoring(nil, nil, WithInterval(10*time.Millisecond)); err != nil {
+	if err := m.StartMonitoringWithInterval(nil, nil, 10*time.Millisecond); err != nil {
 		t.Fatalf("start failed: %v", err)
 	}
 	m.StopMonitoring()
 }
 
-// TestStartMonitoring_ZeroInterval tests the <= 0 interval fallback.
+// TestStartMonitoring_ZeroInterval tests for an invalid interval.
 func TestStartMonitoring_ZeroInterval(t *testing.T) {
 	d := &mockDetector{devices: map[string]device.Info{}}
 	m, _ := NewWithDetector(d)
 
-	if err := m.StartMonitoring(nil, nil, WithInterval(0)); err != nil {
-		t.Fatalf("start failed: %v", err)
+	if err := m.StartMonitoringWithInterval(nil, nil, 0); err != ErrInvalidInterval {
+		t.Fatalf("expected ErrInvalidInterval, got %v", err)
 	}
 	m.StopMonitoring()
 }
@@ -304,7 +284,7 @@ func TestStartMonitoring_TickerFires(t *testing.T) {
 	d := &mockDetector{devices: map[string]device.Info{}}
 	m, _ := NewWithDetector(d)
 
-	if err := m.StartMonitoring(nil, nil, WithInterval(10*time.Millisecond)); err != nil {
+	if err := m.StartMonitoringWithInterval(nil, nil, 10*time.Millisecond); err != nil {
 		t.Fatalf("start failed: %v", err)
 	}
 

@@ -13,11 +13,17 @@ import (
 
 func main() {
 	monitor, err := gousbmon.New()
-	// You can also add a new filter, e.g:
-	// monitor, err := gousbmon.New(gousbmon.MatchVendorID("18D1"))
+	// You can also add a new filter, e.g.: Filter devices with VID=18D1
+	// monitor, err := gousbmon.New(filter.MatchVendorID("18D1"))
 
-	// Or multiple filters, e.g.:
-	// monitor, err := gousbmon.New(gousbmon.MatchUSBInterfaces("HID"), gousbmon.MatchVendorID("046d"))
+	// OR filters together, e.g.: Filter devices with Interface=HID || VID=18D1
+	// monitor, err := gousbmon.New(filter.MatchUSBInterfaces("HID"), filter.MatchVendorID("18D1"))
+
+	// AND filters together, e.g.: Filter devices with Interface=HID && VID=18D1
+	// monitor, err := gousbmon.New(filter.MatchAll(filter.MatchUSBInterfaces("HID"), filter.MatchVendorID("18D1")))
+
+	// AND/OR wombocombo, e.g.: Filter devices with (VID=18D1) || (VID=1234 && ModelID=5678)
+	// monitor, err := gousbmon.New(filter.MatchVendorID("18D1"), filter.MatchAll(filter.MatchVendorID("1234"), filter.MatchModelID("5678")))
 	if err != nil {
 		log.Fatalf("failed to create USB monitor: %v", err)
 	}
@@ -55,8 +61,11 @@ func main() {
 	// Start the background monitor with a default polling interval of 500ms
 	err = monitor.StartMonitoring(onConnect, onDisconnect)
 
+	// Start background monitor and only detect new connections
+	// err = monitor.StartMonitoring(onConnect, nil)
+
 	// Or with a custom polling interval, e.g. 1 second:
-	// err = monitor.StartMonitoring(onConnect, onDisconnect, gousbmon.WithInterval(1*time.Second))
+	// err = monitor.StartMonitoringWithInterval(onConnect, onDisconnect, 1*time.Second)
 	if err != nil {
 		log.Fatalf("failed to start monitoring: %v", err)
 	}

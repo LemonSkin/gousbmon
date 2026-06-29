@@ -24,6 +24,8 @@ var (
 	ErrAlreadyMonitoring = errors.ErrAlreadyMonitoring
 	// ErrUnsupportedPlatform is returned by New on a platform without a backend.
 	ErrUnsupportedPlatform = errors.ErrUnsupportedPlatform
+	// ErrInvalidInterval is returned when an invalid interval is provided to StartMonitoringWithInterval.
+	ErrInvalidInterval = errors.ErrInvalidInterval
 )
 
 // Detector produces the raw set of connected USB devices. Provide a custom implementation to NewWithDetector,
@@ -32,18 +34,6 @@ type Detector = device.Detector
 
 // Callback is invoked with the device ID and its information when a device is connected or disconnected.
 type Callback func(deviceID string, info device.Info)
-
-// Option configures a monitoring session started by StartMonitoring.
-type Option func(*monitorConfig)
-
-type monitorConfig struct {
-	interval time.Duration
-}
-
-// WithInterval sets the polling interval. Values <= 0 use DefaultCheckInterval (500ms).
-func WithInterval(d time.Duration) Option {
-	return func(c *monitorConfig) { c.interval = d }
-}
 
 // Monitor inspects and monitors the USB devices connected to the system.
 type Monitor struct {
@@ -130,15 +120,39 @@ func (m *Monitor) CheckChanges(onConnect, onDisconnect Callback, update bool) er
 
 // StartMonitoring starts a background goroutine that polls for device changes, invoking callbacks as devices appear and
 // disappear. By default it polls every DefaultCheckInterval (500ms); use WithInterval to override.
-func (m *Monitor) StartMonitoring(onConnect, onDisconnect Callback, opts ...Option) error {
-	cfg := monitorConfig{interval: DefaultCheckInterval}
-	for _, opt := range opts {
-		opt(&cfg)
+func (m *Monitor) StartMonitoring(onConnect, onDisconnect Callback) error {
+	interval := DefaultCheckInterval
+
+	m.threadMu.Lock()
+	defer m.threadMu.Unlock()
+	if m.stop != nil {
+		return ErrAlreadyMonitoring
 	}
-	if cfg.interval <= 0 {
-		cfg.interval = DefaultCheckInterval
+	stop := make(chan struct{})
+	m.stop = stop
+	m.wg.Add(1)
+	go func() {
+		defer m.wg.Done()
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+				_ = m.CheckChanges(onConnect, onDisconnect, true)
+			}
+		}
+	}()
+	return nil
+}
+
+// StartMonitoringWithInterval starts a background goroutine that polls for device changes every given interval, invoking callbacks as devices appear and
+// disappear.
+func (m *Monitor) StartMonitoringWithInterval(onConnect, onDisconnect Callback, interval time.Duration) error {
+	if interval <= 0 {
+		return ErrInvalidInterval
 	}
-	interval := cfg.interval
 
 	m.threadMu.Lock()
 	defer m.threadMu.Unlock()

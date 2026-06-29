@@ -24,16 +24,11 @@ GoUSBMonitor has been designed to be very reminiscent of the [USBMonitor](https:
 
 You can restrict which devices the monitor reports by passing filter predicates to `New`. A device is kept if it matches **any** of the provided filters. Use `MatchAll` to require **all** conditions within a single filter.
 
-For example, the following monitor will report devices that **either** have a vendor ID of `046d` (Logitech) **or** simultaneously have a vendor ID of `1234` and a model ID of `5678`.
+For example, the following monitor will report devices that **either** have a vendor ID of `046d` (Logitech) **or** have a vendor ID of `1234` and a model ID of `5678`.
 
 
 ```go
-monitor, err := gousbmon.New(
-	gousbmon.MatchVendorID("046d"),
-	gousbmon.MatchAll(
-		gousbmon.MatchVendorID("1234"),
-		gousbmon.MatchModelID("5678"),
-	),
+monitor, err := gousbmon.New(filter.MatchVendorID("046d"), filter.MatchAll(filter.MatchVendorID("1234"), filter.MatchModelID("5678")),
 )
 ```
 
@@ -44,24 +39,33 @@ monitor, err := gousbmon.New(
 
 Creates a `Monitor` for the current platform. Optional filters restrict the devices that are reported and monitored. A device is kept if it matches any one of the provided filters.
 
-- `filters`: `...Filter` — Optional predicates to filter devices. See the [Match helpers](#match-helpers) below.
+- `filters`: `...Filter` - Optional predicates to filter devices. See the [Match helpers](#match-helpers) below.
 - Returns `*Monitor` and `error`.
 
 ### `gousbmon.NewWithDetector(detector Detector, filters ...Filter) (*Monitor, error)`
 
 Creates a `Monitor` backed by a caller-supplied `Detector`. Can be used to provide a custom detector implementation.
 
-- `detector`: `Detector` — An implementation of `device.Detector`.
-- `filters`: `...Filter` — Optional filters.
+- `detector`: `Detector` - An implementation of `device.Detector`.
+- `filters`: `...Filter` - Optional filters.
 - Returns `*Monitor` and `error`.
 
-### `(*Monitor) StartMonitoring(onConnect, onDisconnect Callback, opts ...Option) error`
+### `(*Monitor) StartMonitoring(onConnect, onDisconnect Callback) error`
 
-Starts a background goroutine that polls for device changes, invoking `onConnect`/`onDisconnect` as devices appear and disappear. By default it polls every 500ms; use `WithInterval` to override.
+Starts a background goroutine that polls for device changes, invoking `onConnect`/`onDisconnect` as devices appear and disappear. Polls every 500ms.
 
-- `onConnect`: `Callback` — Invoked when a device is connected.
-- `onDisconnect`: `Callback` — Invoked when a device is disconnected.
-- `opts`: `...Option` — Optional configuration. See [Options](#options).
+- `onConnect`: `Callback` - Invoked when a device is connected.
+- `onDisconnect`: `Callback` - Invoked when a device is disconnected.
+- Returns `ErrAlreadyMonitoring` if monitoring is already running.
+
+### `(*Monitor) StartMonitoringWithInterval(onConnect, onDisconnect Callback, interval time.Duration) error`
+
+Starts a background goroutine that polls for device changes, invoking `onConnect`/`onDisconnect` as devices appear and disappear. Polls every 500ms.
+
+- `onConnect`: `Callback` - Invoked when a device is connected.
+- `onDisconnect`: `Callback` - Invoked when a device is disconnected.
+- `interval`: `time.Duration` - Polling interval.
+- Returns `ErrInvalidInterval` if the interval is invalid.
 - Returns `ErrAlreadyMonitoring` if monitoring is already running.
 
 ### `(*Monitor) StopMonitoring()`
@@ -79,16 +83,6 @@ Returns the devices removed and added since the previous check. When `update` is
 ### `(*Monitor) CheckChanges(onConnect, onDisconnect Callback, update bool) error`
 
 Runs a single change-detection pass, invoking the callbacks for each removed and added device. When `update` is `true`, the internal snapshot is saved to the current state.
-
-### Options
-
-#### `WithInterval(d time.Duration) Option`
-
-Sets the polling interval. Values <= 0 use `DefaultCheckInterval` (500ms).
-
-```go
-monitor.StartMonitoring(onConnect, onDisconnect, gousbmon.WithInterval(1*time.Second))
-```
 
 ### Match helpers
 
