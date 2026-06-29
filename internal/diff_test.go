@@ -1,4 +1,4 @@
-package gousbmon
+package internal
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ func TestDiffNewDevice(t *testing.T) {
 		"device1": {},
 	}
 	prev := map[string]device.Info{}
-	removed, added := diff(prev, current)
+	removed, added := Diff(prev, current)
 	if len(removed) != 0 || len(added) != 1 {
 		t.Errorf(`diff(%v, %v) = %v, %v, want %v, %v`, prev, current, removed, added, map[string]device.Info{}, map[string]device.Info{"device1": {}})
 	}
@@ -24,7 +24,7 @@ func TestDiffDeviceRemoved(t *testing.T) {
 	prev := map[string]device.Info{
 		"device1": {},
 	}
-	removed, added := diff(prev, current)
+	removed, added := Diff(prev, current)
 	if len(removed) != 1 || len(added) != 0 {
 		t.Errorf(`diff(%v, %v) = %v, %v, want %v, %v`, prev, current, removed, added, map[string]device.Info{"device1": {}}, map[string]device.Info{})
 	}
@@ -38,7 +38,7 @@ func TestDiffSecondDeviceAdded(t *testing.T) {
 	prev := map[string]device.Info{
 		"device1": {},
 	}
-	removed, added := diff(prev, current)
+	removed, added := Diff(prev, current)
 	if len(removed) != 0 || len(added) != 1 {
 		t.Errorf(`diff(%v, %v) = %v, %v, want %v, %v`, prev, current, removed, added, map[string]device.Info{}, map[string]device.Info{"device2": {}})
 	}
@@ -52,7 +52,7 @@ func TestDiffSwapDevice(t *testing.T) {
 	prev := map[string]device.Info{
 		"device1": {},
 	}
-	removed, added := diff(prev, current)
+	removed, added := Diff(prev, current)
 	if len(removed) != 1 || len(added) != 1 {
 		t.Errorf(`diff(%v, %v) = %v, %v, want %v, %v`, prev, current, removed, added, map[string]device.Info{"device1": {}}, map[string]device.Info{"device2": {}})
 	}

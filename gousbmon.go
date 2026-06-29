@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/LemonSkin/gousbmon/device"
+	"github.com/LemonSkin/gousbmon/filter"
+	"github.com/LemonSkin/gousbmon/internal"
 	"github.com/LemonSkin/gousbmon/internal/errors"
 	"github.com/LemonSkin/gousbmon/internal/platform"
 )
@@ -46,7 +48,7 @@ func WithInterval(d time.Duration) Option {
 // Monitor inspects and monitors the USB devices connected to the system.
 type Monitor struct {
 	detector device.Detector
-	filters  []Filter
+	filters  []filter.Filter
 
 	mu        sync.Mutex
 	lastCheck map[string]device.Info
@@ -58,7 +60,7 @@ type Monitor struct {
 
 // New creates a Monitor for the current platform. Optional filters restrict the devices that are reported and
 // monitored.
-func New(filters ...Filter) (*Monitor, error) {
+func New(filters ...filter.Filter) (*Monitor, error) {
 	detector, err := newPlatformDetector()
 	if err != nil {
 		return nil, err
@@ -68,7 +70,7 @@ func New(filters ...Filter) (*Monitor, error) {
 
 // NewWithDetector creates a Monitor backed by a caller-supplied Detector, bypassing platform detection.
 // Mostly used for testing or for users who want to provide their own custom backend.
-func NewWithDetector(detector Detector, filters ...Filter) (*Monitor, error) {
+func NewWithDetector(detector Detector, filters ...filter.Filter) (*Monitor, error) {
 	m := &Monitor{detector: detector, filters: filters}
 	devices, err := m.GetAvailableDevices()
 	if err != nil {
@@ -102,7 +104,7 @@ func (m *Monitor) ChangesFromLastCheck(update bool) (removed, added map[string]d
 	}
 	m.mu.Unlock()
 
-	removed, added = diff(prev, current)
+	removed, added = internal.Diff(prev, current)
 	return removed, added, nil
 }
 
@@ -173,4 +175,22 @@ func (m *Monitor) StopMonitoring() {
 	}
 	close(stop)
 	m.wg.Wait()
+}
+
+// applyFilters keeps only the devices that match at least one of the filters. If no filters are provided, devices is
+// returned unchanged.
+func applyFilters(devices map[string]device.Info, filters []filter.Filter) map[string]device.Info {
+	if len(filters) == 0 {
+		return devices
+	}
+	out := make(map[string]device.Info, len(devices))
+	for id, info := range devices {
+		for _, f := range filters {
+			if f(info) {
+				out[id] = info
+				break
+			}
+		}
+	}
+	return out
 }

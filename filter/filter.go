@@ -1,27 +1,8 @@
-package gousbmon
+package filter
 
 import "github.com/LemonSkin/gousbmon/device"
 
-// Filter is a predicate that decides whether a device matches. A device matches when the function returns true.
 type Filter func(device.Info) bool
-
-// applyFilters keeps only the devices that match at least one of the filters. If no filters are provided, devices is
-// returned unchanged.
-func applyFilters(devices map[string]device.Info, filters []Filter) map[string]device.Info {
-	if len(filters) == 0 {
-		return devices
-	}
-	out := make(map[string]device.Info, len(devices))
-	for id, info := range devices {
-		for _, f := range filters {
-			if f(info) {
-				out[id] = info
-				break
-			}
-		}
-	}
-	return out
-}
 
 // MatchAll returns a Filter that matches only when all of the provided filters match.
 func MatchAll(filters ...Filter) Filter {

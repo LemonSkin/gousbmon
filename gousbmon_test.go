@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/LemonSkin/gousbmon/device"
+	"github.com/LemonSkin/gousbmon/filter"
 )
 
 // mockDetector is a fake detector for testing.
@@ -87,7 +88,7 @@ func TestGetAvailableDevices_Filtered(t *testing.T) {
 			"dev2": {IDVendorID: "5678"},
 		},
 	}
-	m, err := NewWithDetector(d, MatchVendorID("1234"))
+	m, err := NewWithDetector(d, filter.MatchVendorID("1234"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -311,4 +312,33 @@ func TestStartMonitoring_TickerFires(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	m.StopMonitoring()
+}
+
+// TestApplyFilters_NoFilter tests that devices pass through when no filters are provided.
+func TestApplyFilters_NoFilter(t *testing.T) {
+	devices := map[string]device.Info{"device1": {IDVendorID: "1234"}}
+	result := applyFilters(devices, []filter.Filter{})
+	if len(result) != 1 {
+		t.Errorf("applyFilters(%v, %v) = %v, want %v", devices, []filter.Filter{}, result, devices)
+	}
+}
+
+// TestApplyFilters_OneMatchingFilter tests that a matching predicate keeps the device.
+func TestApplyFilters_OneMatchingFilter(t *testing.T) {
+	devices := map[string]device.Info{"device1": {IDVendorID: "1234"}}
+	f := filter.MatchVendorID("1234")
+	result := applyFilters(devices, []filter.Filter{f})
+	if len(result) != 1 {
+		t.Errorf("applyFilters(%v, %v) = %v, want %v", devices, []filter.Filter{f}, result, devices)
+	}
+}
+
+// TestApplyFilters_OneNonMatchingFilter tests that a non-matching predicate removes the device.
+func TestApplyFilters_OneNonMatchingFilter(t *testing.T) {
+	devices := map[string]device.Info{"device1": {IDVendorID: "1234"}}
+	f := filter.MatchVendorID("5678")
+	result := applyFilters(devices, []filter.Filter{f})
+	if len(result) != 0 {
+		t.Errorf("applyFilters(%v, %v) = %v, want %v", devices, []filter.Filter{f}, result, map[string]device.Info{})
+	}
 }

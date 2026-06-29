@@ -1,39 +1,10 @@
-package gousbmon
+package filter
 
 import (
 	"testing"
 
 	"github.com/LemonSkin/gousbmon/device"
 )
-
-// TestApplyFilters_NoFilter tests that devices pass through when no filters are provided.
-func TestApplyFilters_NoFilter(t *testing.T) {
-	devices := map[string]device.Info{"device1": {IDVendorID: "1234"}}
-	result := applyFilters(devices, []Filter{})
-	if len(result) != 1 {
-		t.Errorf("applyFilters(%v, %v) = %v, want %v", devices, []Filter{}, result, devices)
-	}
-}
-
-// TestApplyFilters_OneMatchingFilter tests that a matching predicate keeps the device.
-func TestApplyFilters_OneMatchingFilter(t *testing.T) {
-	devices := map[string]device.Info{"device1": {IDVendorID: "1234"}}
-	filter := MatchVendorID("1234")
-	result := applyFilters(devices, []Filter{filter})
-	if len(result) != 1 {
-		t.Errorf("applyFilters(%v, %v) = %v, want %v", devices, []Filter{filter}, result, devices)
-	}
-}
-
-// TestApplyFilters_OneNonMatchingFilter tests that a non-matching predicate removes the device.
-func TestApplyFilters_OneNonMatchingFilter(t *testing.T) {
-	devices := map[string]device.Info{"device1": {IDVendorID: "1234"}}
-	filter := MatchVendorID("5678")
-	result := applyFilters(devices, []Filter{filter})
-	if len(result) != 0 {
-		t.Errorf("applyFilters(%v, %v) = %v, want %v", devices, []Filter{filter}, result, map[string]device.Info{})
-	}
-}
 
 // TestMatchAll_Match tests that MatchAll passes when all predicates match.
 func TestMatchAll_Match(t *testing.T) {

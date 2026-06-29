@@ -1,9 +1,9 @@
-package gousbmon
+package internal
 
 import "github.com/LemonSkin/gousbmon/device"
 
-// diff returns the devices removed and added when moving from prev to current.
-func diff(prev, current map[string]device.Info) (removed, added map[string]device.Info) {
+// Diff returns the devices removed and added when moving from prev to current.
+func Diff(prev, current map[string]device.Info) (removed, added map[string]device.Info) {
 	removed = make(map[string]device.Info)
 	added = make(map[string]device.Info)
 	for id, info := range prev {
