@@ -1,10 +1,10 @@
 # GoUSBMonitor
 
-GoUSBMonitor is a cross-platform (eventually) library for USB device monitoring that simplifies tracking of connections, disconnections, and examination of connected device attributes on Windows, Linux and macOS (eventually).
+GoUSBMonitor is a cross-platform library for USB device monitoring that simplifies tracking of connections, disconnections, and examination of connected device attributes on Windows, Linux and macOS (eventually).
 
 It is heavily inspired by the [USBMonitor](https://github.com/Lemon-Skin/USBMonitor) library for Python.
 
-Currently it only supports Windows as that is what I have needed it for, but I plan on adding support for Linux in the near future and macOS at some point, probably in the far future.
+Currently it supports Windows and Linux as that is what I have needed it for, but I plan on adding support for macOS at some point as required.
 
 I built this because other solutions are either single-platform ([USBMon](https://github.com/rubiojr/go-usbmon)) or require additional dependencies and/or do more than I need ([gousb](https://github.com/google/gousb)).
 
