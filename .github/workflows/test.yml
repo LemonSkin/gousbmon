@@ -11,9 +11,9 @@ jobs:
     name: test windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@latest
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26.3'
 
@@ -42,7 +42,7 @@ jobs:
         run: go test -v -coverprofile=coverage.txt ./...
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@latest
+        uses: actions/upload-artifact@v7
         with:
           name: code-coverage-windows
           path: coverage.txt
@@ -68,9 +68,9 @@ jobs:
             tags: 'sd_device'
     name: test linux (${{ matrix.backend.name }})
     steps:
-      - uses: actions/checkout@latest
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@latest
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.26.3'
 
@@ -91,7 +91,7 @@ jobs:
         run: go test -v -tags '${{ matrix.backend.tags }}' -coverprofile=coverage.txt ./...
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@latest
+        uses: actions/upload-artifact@v7
         with:
           name: code-coverage-linux-${{ matrix.backend.name }}
           path: coverage.txt
