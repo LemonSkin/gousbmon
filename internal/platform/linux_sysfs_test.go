@@ -3,11 +3,59 @@
 package platform
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/LemonSkin/gousbmon/device"
 )
+
+// writeSysfsFixture builds a fake /sys/bus/usb/devices tree in a temp directory and returns its root. The fixture is
+// generated at runtime rather than committed because interface directories are named with a colon (e.g. "1-1:1.0"),
+// and these break Windows checkouts.
+func writeSysfsFixture(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	write := func(rel, content string) {
+		path := filepath.Join(root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("mkdir for %s: %v", rel, err)
+		}
+		// sysfs attribute files end in a trailing newline; readSysfsAttr trims it.
+		if err := os.WriteFile(path, []byte(content+"\n"), 0o644); err != nil {
+			t.Fatalf("write %s: %v", rel, err)
+		}
+	}
+
+	// Root hub (filtered out by name).
+	write("usb1/idVendor", "1d6b")
+	write("usb1/idProduct", "0002")
+	write("usb1/busnum", "1")
+	write("usb1/devnum", "1")
+	write("usb1/bDeviceClass", "09")
+
+	// Fully-enumerated mouse with a single HID interface.
+	write("1-1/idVendor", "046d")
+	write("1-1/idProduct", "c077")
+	write("1-1/manufacturer", "Logitech")
+	write("1-1/product", "USB Optical Mouse")
+	write("1-1/serial", "ABC123")
+	write("1-1/bcdDevice", "7200")
+	write("1-1/busnum", "1")
+	write("1-1/devnum", "4")
+	write("1-1/bDeviceClass", "00")
+	write("1-1/1-1:1.0/bInterfaceClass", "03")
+	write("1-1/1-1:1.0/bInterfaceSubClass", "01")
+	write("1-1/1-1:1.0/bInterfaceProtocol", "02")
+
+	// Top-level interface directory (skipped because its name contains a colon).
+	write("1-1:1.0/bInterfaceClass", "03")
+
+	// Half-enumerated device missing idVendor/idProduct (skipped).
+	write("2-1/manufacturer", "Half-enumerated Device")
+
+	return root
+}
 
 func TestBuildUSBInterfaces(t *testing.T) {
 	tests := []struct {
@@ -90,7 +138,7 @@ func TestSysfsToDeviceInfo_ExplicitClass(t *testing.T) {
 }
 
 func TestReadSysfsDevice(t *testing.T) {
-	root := filepath.Join("testdata", "sysfs")
+	root := writeSysfsFixture(t)
 
 	t.Run("usable device", func(t *testing.T) {
 		dev, ok := readSysfsDevice(filepath.Join(root, "1-1"), "1-1")
@@ -116,7 +164,7 @@ func TestReadSysfsDevice(t *testing.T) {
 }
 
 func TestGetAvailableDevices(t *testing.T) {
-	d := &sysfsDetector{root: filepath.Join("testdata", "sysfs")}
+	d := &sysfsDetector{root: writeSysfsFixture(t)}
 	devices, err := d.GetAvailableDevices()
 	if err != nil {
 		t.Fatalf("GetAvailableDevices failed: %v", err)
@@ -146,7 +194,7 @@ func TestGetAvailableDevices(t *testing.T) {
 }
 
 func TestGetAvailableDevices_BadRoot(t *testing.T) {
-	d := &sysfsDetector{root: filepath.Join("testdata", "does-not-exist")}
+	d := &sysfsDetector{root: filepath.Join(t.TempDir(), "does-not-exist")}
 	if _, err := d.GetAvailableDevices(); err == nil {
 		t.Error("expected error for non-existent sysfs root")
 	}

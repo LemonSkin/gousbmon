@@ -7,7 +7,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  test:
+  windows:
+    name: test windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -65,7 +66,7 @@ jobs:
             tags: 'udev'
           - name: sd-device
             tags: 'sd_device'
-    name: linux (${{ matrix.backend.name }})
+    name: test linux (${{ matrix.backend.name }})
     steps:
       - uses: actions/checkout@v4
 
