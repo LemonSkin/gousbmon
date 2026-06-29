@@ -2,7 +2,7 @@
 // platform backends implement.
 package device
 
-// Info holds the normalized attributes of a USB device.
+// Info holds the normalised attributes of a USB device.
 type Info struct {
 	IDVendorID             string
 	IDVendor               string

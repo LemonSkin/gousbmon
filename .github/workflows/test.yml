@@ -43,12 +43,54 @@ jobs:
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: code-coverage
+          name: code-coverage-windows
           path: coverage.txt
 
-      - name: Post Coverage to PR
-        if: github.event_name == 'pull_request'
-        uses: fgrosse/go-coverage-report@v1.3.0
+      # - name: Post Coverage to PR
+      #   if: github.event_name == 'pull_request'
+      #   uses: fgrosse/go-coverage-report@v1.3.0
+      #   with:
+      #     coverage-artifact-name: code-coverage-windows
+      #     coverage-file-name: coverage.txt
+
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend:
+          - name: sysfs
+            tags: ''
+          - name: libudev
+            tags: 'udev'
+          - name: sd-device
+            tags: 'sd_device'
+    name: linux (${{ matrix.backend.name }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
         with:
-          coverage-artifact-name: code-coverage
-          coverage-file-name: coverage.txt
+          go-version: '1.26.3'
+
+      - name: Install cgo dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libsystemd-dev
+
+      - name: Run go vet
+        run: go vet -tags '${{ matrix.backend.tags }}' ./...
+
+      - name: Run staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck -tags '${{ matrix.backend.tags }}' ./...
+
+      - name: Run Test Coverage
+        env:
+          CGO_ENABLED: '1'
+        run: go test -v -tags '${{ matrix.backend.tags }}' -coverprofile=coverage.txt ./...
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-linux-${{ matrix.backend.name }}
+          path: coverage.txt
