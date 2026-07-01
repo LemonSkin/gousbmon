@@ -27,7 +27,7 @@ func buildDevName(busnum, devnum int) string {
 	return fmt.Sprintf("/dev/bus/usb/%03d/%03d", busnum, devnum)
 }
 
-// infoFromProperties maps a udev / sd-device property set (ID_*, DEVNAME, DEVTYPE) to a normalised device.Info.
+// infoFromProperties maps a udev / sd-device property set (ID_*, DEVNAME, DEVTYPE) to a normalised device.DeviceInfo.
 func infoFromProperties(props map[string]string) device.DeviceInfo {
 	serial := props["ID_SERIAL_SHORT"]
 	if serial == "" {

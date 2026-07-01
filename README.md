@@ -22,48 +22,48 @@ GoUSBMonitor has been designed to be very reminiscent of the [USBMonitor](https:
 
 ### Filtering devices
 
-You can restrict which devices the monitor reports by passing filter predicates to `New`. A device is kept if it matches **any** of the provided filters. Use `MatchAll` to require **all** conditions within a single filter.
+You can restrict which devices the monitor reports by passing `Filter` objects to `gousbmon.WithFilters`. A device is kept if it matches **any** of the provided filters. Chain methods on a single `Filter` to require **all** of those conditions.
 
-For example, the following monitor will report devices that **either** have a vendor ID of `046d` (Logitech) **or** have a vendor ID of `1234` and a model ID of `5678`.
+For example, the following monitor will report devices that **either** have a vendor ID of `046d` **or** have a vendor ID of `1234` and a model ID of `5678`.
 
 
 ```go
-monitor, err := gousbmon.New(filter.MatchVendorID("046d"), filter.MatchAll(filter.MatchVendorID("1234"), filter.MatchModelID("5678")),
-)
+f1 := gousbmon.NewFilter().MatchVendorID("046d")
+f2 := gousbmon.NewFilter().MatchVendorID("1234").MatchModelID("5678")
+monitor, err := gousbmon.NewMonitor(gousbmon.WithFilters(f1, f2))
 ```
 
 
 ## API Reference
 
-### `gousbmon.New(filters ...Filter) (*Monitor, error)`
+### `gousbmon.NewMonitor(opts ...Option) (*Monitor, error)`
 
-Creates a `Monitor` for the current platform. Optional filters restrict the devices that are reported and monitored. A device is kept if it matches any one of the provided filters.
+Creates a `Monitor` for the current platform. Options configure the detector, logger, handler, and filters.
 
-- `filters`: `...Filter` - Optional predicates to filter devices. See the [Match helpers](#match-helpers) below.
+- `opts`: `...Option` - Optional configuration options. See the [Options](#options) below.
 - Returns `*Monitor` and `error`.
 
-### `gousbmon.NewWithDetector(detector Detector, filters ...Filter) (*Monitor, error)`
+### Options
 
-Creates a `Monitor` backed by a caller-supplied `Detector`. Can be used to provide a custom detector implementation.
+- `gousbmon.WithDetector(d device.Detector) Option` - Use a custom `Detector` instead of the platform-specific one.
+- `gousbmon.WithLogger(l *slog.Logger) Option` - Set the logger used for diagnostic output.
+- `gousbmon.WithHandler(h slog.Handler) Option` - Set the logger from an `slog.Handler`.
+- `gousbmon.WithFilters(filters ...*Filter) Option` - Restrict monitored devices to those matching the supplied filters.
 
-- `detector`: `Detector` - An implementation of `device.Detector`.
-- `filters`: `...Filter` - Optional filters.
-- Returns `*Monitor` and `error`.
-
-### `(*Monitor) StartMonitoring(onConnect, onDisconnect Callback) error`
+### `(*Monitor) StartMonitoring(onConnect, onDisconnect func(deviceID string, info DeviceInfo)) error`
 
 Starts a background goroutine that polls for device changes, invoking `onConnect`/`onDisconnect` as devices appear and disappear. Polls every 500ms.
 
-- `onConnect`: `Callback` - Invoked when a device is connected.
-- `onDisconnect`: `Callback` - Invoked when a device is disconnected.
+- `onConnect`: `func(deviceID string, info DeviceInfo)` - Invoked when a device is connected.
+- `onDisconnect`: `func(deviceID string, info DeviceInfo)` - Invoked when a device is disconnected.
 - Returns `ErrAlreadyMonitoring` if monitoring is already running.
 
-### `(*Monitor) StartMonitoringWithInterval(onConnect, onDisconnect Callback, interval time.Duration) error`
+### `(*Monitor) StartMonitoringWithInterval(onConnect, onDisconnect func(deviceID string, info DeviceInfo), interval time.Duration) error`
 
-Starts a background goroutine that polls for device changes, invoking `onConnect`/`onDisconnect` as devices appear and disappear. Polls every 500ms.
+Starts a background goroutine that polls for device changes at the given interval, invoking `onConnect`/`onDisconnect` as devices appear and disappear.
 
-- `onConnect`: `Callback` - Invoked when a device is connected.
-- `onDisconnect`: `Callback` - Invoked when a device is disconnected.
+- `onConnect`: `func(deviceID string, info DeviceInfo)` - Invoked when a device is connected.
+- `onDisconnect`: `func(deviceID string, info DeviceInfo)` - Invoked when a device is disconnected.
 - `interval`: `time.Duration` - Polling interval.
 - Returns `ErrInvalidInterval` if the interval is invalid.
 - Returns `ErrAlreadyMonitoring` if monitoring is already running.
@@ -72,42 +72,38 @@ Starts a background goroutine that polls for device changes, invoking `onConnect
 
 Stops the background monitoring goroutine.
 
-### `(*Monitor) GetAvailableDevices() (map[string]device.Info, error)`
+### `(*Monitor) GetAvailableDevices() (map[string]DeviceInfo, error)`
 
 Returns the currently connected devices keyed by device ID, after applying any configured filters.
 
-### `(*Monitor) ChangesFromLastCheck(update bool) (removed, added map[string]device.Info, err error)`
+### `(*Monitor) ChangesFromLastCheck(update bool) (removed, added map[string]DeviceInfo, err error)`
 
 Returns the devices removed and added since the previous check. When `update` is `true`, the internal snapshot is saved to the current state.
 
-### `(*Monitor) CheckChanges(onConnect, onDisconnect Callback, update bool) error`
+### `(*Monitor) CheckChanges(onConnect, onDisconnect func(deviceID string, info DeviceInfo), update bool) error`
 
 Runs a single change-detection pass, invoking the callbacks for each removed and added device. When `update` is `true`, the internal snapshot is saved to the current state.
 
-### Match helpers
+### `Filter` builder
 
-All match functions return a `Filter` predicate:
+Create a `Filter` with `gousbmon.NewFilter()` and chain methods to add criteria. All criteria on a single `Filter` must match (AND logic). Pass multiple filters to `WithFilters` for OR logic.
 
-- `MatchVendorID(id string) Filter`
-- `MatchModelID(id string) Filter`
-- `MatchVendor(name string) Filter`
-- `MatchModel(name string) Filter`
-- `MatchSerial(serial string) Filter`
-- `MatchUSBInterfaces(interfaces string) Filter`
-- `MatchRevision(revision string) Filter`
-- `MatchUSBClassFromDatabase(class string) Filter`
-- `MatchVendorFromDatabase(vendor string) Filter`
-- `MatchModelFromDatabase(model string) Filter`
-- `MatchDevName(name string) Filter`
-- `MatchDevType(devType string) Filter`
-
-Combine filters with AND logic:
-
-- `MatchAll(filters ...Filter) Filter`
+- `(*Filter) MatchVendorID(id string) *Filter`
+- `(*Filter) MatchModelID(id string) *Filter`
+- `(*Filter) MatchVendor(name string) *Filter`
+- `(*Filter) MatchModel(name string) *Filter`
+- `(*Filter) MatchSerial(serial string) *Filter`
+- `(*Filter) MatchUSBInterfaces(interfaces string) *Filter`
+- `(*Filter) MatchRevision(revision string) *Filter`
+- `(*Filter) MatchUSBClassFromDatabase(class string) *Filter`
+- `(*Filter) MatchVendorFromDatabase(vendor string) *Filter`
+- `(*Filter) MatchModelFromDatabase(model string) *Filter`
+- `(*Filter) MatchDevName(name string) *Filter`
+- `(*Filter) MatchDevType(devType string) *Filter`
 
 ## Device Properties
 
-The `device.Info` struct returned by most functions contains the following fields:
+The `DeviceInfo` struct returned by most functions contains the following fields:
 
 | Field | Type | Description |
 |-------|------|-------------|

@@ -31,7 +31,7 @@ func New(logger *slog.Logger) (device.Detector, error) {
 	return &udevDetector{log: logger}, nil
 }
 
-func (d *udevDetector) GetAvailableDevices() (map[string]device.Info, error) {
+func (d *udevDetector) GetAvailableDevices() (map[string]device.DeviceInfo, error) {
 	ctx := C.udev_new()
 	if ctx == nil {
 		return nil, fmt.Errorf("gousbmon: udev_new failed")
@@ -52,7 +52,7 @@ func (d *udevDetector) GetAvailableDevices() (map[string]device.Info, error) {
 		return nil, fmt.Errorf("gousbmon: udev_enumerate_scan_devices failed: %d", int(rc))
 	}
 
-	result := make(map[string]device.Info)
+	result := make(map[string]device.DeviceInfo)
 	for entry := C.udev_enumerate_get_list_entry(enum); entry != nil; entry = C.udev_list_entry_get_next(entry) {
 		syspath := C.udev_list_entry_get_name(entry)
 		dev := C.udev_device_new_from_syspath(ctx, syspath)
@@ -67,18 +67,18 @@ func (d *udevDetector) GetAvailableDevices() (map[string]device.Info, error) {
 	return result, nil
 }
 
-// udevDeviceInfo converts a udev device into a device.Info. It returns false for devices that should be skipped:
+// udevDeviceInfo converts a udev device into a device.DeviceInfo. It returns false for devices that should be skipped:
 // non usb_device entries, uninitialised devices, and root hubs.
-func udevDeviceInfo(dev *C.struct_udev_device) (device.Info, string, bool) {
+func udevDeviceInfo(dev *C.struct_udev_device) (device.DeviceInfo, string, bool) {
 	if goString(C.udev_device_get_devtype(dev)) != "usb_device" {
-		return device.Info{}, "", false
+		return device.DeviceInfo{}, "", false
 	}
 
 	if C.udev_device_get_is_initialized(dev) == 0 {
-		return device.Info{}, "", false
+		return device.DeviceInfo{}, "", false
 	}
 	if isRootHub(goString(C.udev_device_get_sysname(dev))) {
-		return device.Info{}, "", false
+		return device.DeviceInfo{}, "", false
 	}
 
 	props := udevProperties(dev)

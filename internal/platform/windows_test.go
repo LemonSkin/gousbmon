@@ -88,7 +88,7 @@ func TestFirstMatch(t *testing.T) {
 	}
 }
 
-// TestToDeviceInfo tests normalization of raw Windows devices into device.Info.
+// TestToDeviceInfo tests normalization of raw Windows devices into device.DeviceInfo.
 func TestToDeviceInfo(t *testing.T) {
 	t.Run("standard USB device", func(t *testing.T) {
 		dev := winDevice{

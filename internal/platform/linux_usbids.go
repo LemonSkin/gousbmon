@@ -40,7 +40,7 @@ func loadUSBIDs() *usbIDs {
 }
 
 // parseUSBIDs parses a usb.ids database. Only the vendor/product and class (C) sections are retained, since those are
-// the ones that map onto device.Info's *FromDatabase fields.
+// the ones that map onto device.DeviceInfo's *FromDatabase fields.
 func parseUSBIDs(r io.Reader) *usbIDs {
 	ids := &usbIDs{
 		vendors:  map[string]string{},

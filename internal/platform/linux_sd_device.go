@@ -14,7 +14,7 @@ import (
 	"log/slog"
 	"unsafe"
 
-	"github.com/LemonSkin/gousbmon/internal/device"
+	"github.com/LemonSkin/gousbmon/device"
 )
 
 // udevPropertyKeys are the udev/hwdb property names read for each device. DEVNAME and DEVTYPE are read via dedicated
@@ -47,7 +47,7 @@ func New(logger *slog.Logger) (device.Detector, error) {
 	return &sdDeviceDetector{log: logger}, nil
 }
 
-func (d *sdDeviceDetector) GetAvailableDevices() (map[string]device.Info, error) {
+func (d *sdDeviceDetector) GetAvailableDevices() (map[string]device.DeviceInfo, error) {
 	var enum *C.sd_device_enumerator
 	if rc := C.sd_device_enumerator_new(&enum); rc < 0 {
 		return nil, fmt.Errorf("gousbmon: sd_device_enumerator_new failed: %d", int(rc))
@@ -59,7 +59,7 @@ func (d *sdDeviceDetector) GetAvailableDevices() (map[string]device.Info, error)
 	C.free(unsafe.Pointer(subsystem))
 
 	// The enumerator returns only udevd-initialised devices
-	result := make(map[string]device.Info)
+	result := make(map[string]device.DeviceInfo)
 	for dev := C.sd_device_enumerator_get_device_first(enum); dev != nil; dev = C.sd_device_enumerator_get_device_next(enum) {
 		if info, key, ok := sdDeviceInfo(dev); ok {
 			result[key] = info
@@ -68,14 +68,14 @@ func (d *sdDeviceDetector) GetAvailableDevices() (map[string]device.Info, error)
 	return result, nil
 }
 
-// sdDeviceInfo converts an sd-device into a device.Info. It returns false for non usb_device entries and root hubs.
-func sdDeviceInfo(dev *C.sd_device) (device.Info, string, bool) {
+// sdDeviceInfo converts an sd-device into a device.DeviceInfo. It returns false for non usb_device entries and root hubs.
+func sdDeviceInfo(dev *C.sd_device) (device.DeviceInfo, string, bool) {
 	devtype, ok := sdDevtype(dev)
 	if !ok || devtype != "usb_device" {
-		return device.Info{}, "", false
+		return device.DeviceInfo{}, "", false
 	}
 	if sysname, ok := sdSysname(dev); ok && isRootHub(sysname) {
-		return device.Info{}, "", false
+		return device.DeviceInfo{}, "", false
 	}
 
 	props := map[string]string{"DEVTYPE": devtype}

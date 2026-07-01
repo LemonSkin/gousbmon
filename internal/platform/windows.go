@@ -75,7 +75,7 @@ func New(logger *slog.Logger) (device.Detector, error) {
 	return &windowsDetector{log: logger}, nil
 }
 
-// winDevice holds the raw device properties read from SetupAPI before they are normalised into a device.Info.
+// winDevice holds the raw device properties read from SetupAPI before they are normalised into a device.DeviceInfo.
 type winDevice struct {
 	DeviceID     string
 	PNPDeviceID  string
