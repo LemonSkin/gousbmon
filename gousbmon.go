@@ -21,7 +21,24 @@ var errInvalidInterval = errors.New("gousbmon: invalid interval")
 // newPlatformDetector is the function New uses to obtain a platform detector. Made overridable here for testing.
 var newPlatformDetector = platform.New
 
+// DeviceInfo holds the normalised attributes of a USB device.
+//
+// Fields:
+//   - IDVendorID: the USB vendor ID (e.g., "18D1")
+//   - IDVendor: the vendor name reported by the device
+//   - IDModel: the model name reported by the device
+//   - IDModelID: the USB product/model ID
+//   - IDSerial: the device serial number
+//   - IDUSBInterfaces: the USB interfaces string
+//   - IDRevision: the device revision
+//   - IDUSBClassFromDatabase: the USB class from the database
+//   - IDVendorFromDatabase: the vendor name from the database
+//   - IDModelFromDatabase: the model name from the database
+//   - DevName: the system device name (e.g., "usb0")
+//   - DevType: the system device type (e.g., "usb_device")
 type DeviceInfo = device.DeviceInfo
+
+// Detector is implemented by each platform-specific backend. It returns the raw set of currently connected USB devices.
 type Detector = device.Detector
 
 // Monitor inspects and monitors the USB devices connected to the system.
@@ -38,7 +55,7 @@ type Monitor struct {
 	wg       sync.WaitGroup
 }
 
-// NewMonitor creates a Monitor for the current platform. Configuration options include WithDetector, WithFilter, WithLogger, and WithHandler.
+// NewMonitor creates a Monitor for the current platform. Configuration options include WithDetector, WithFilters, WithLogger, and WithHandler.
 func NewMonitor(opts ...Option) (*Monitor, error) {
 	cfg := newConfig(opts)
 	var detector device.Detector

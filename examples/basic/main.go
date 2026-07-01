@@ -20,19 +20,19 @@ func main() {
 	// AND filters together: Add multiple criteria to a single filter
 	// Match devices with USB interface "HID" AND vendor ID "18D1"
 	// f := gousbmon.NewFilter().MatchUSBInterfaces("HID").MatchVendorID("18D1")
-	// monitor, err := gousbmon.New(gousbmon.WithFilters(f))
+	// monitor, err := gousbmon.NewMonitor(gousbmon.WithFilters(f))
 
 	// OR filters together: Add multiple filters to match different criteria
 	// Match devices with USB interface "HID" OR vendor ID "18D1"
 	// f1 := gousbmon.NewFilter().MatchUSBInterfaces("HID")
 	// f2 := gousbmon.NewFilter().MatchVendorID("18D1")
-	// monitor, err := gousbmon.New(gousbmon.WithFilters(f1, f2))
+	// monitor, err := gousbmon.NewMonitor(gousbmon.WithFilters(f1, f2))
 
 	// AND/OR wombocombo: Combine the above to create more complex filters
 	// Match devices with vendor ID 18D1 OR devices with vendor ID 1234 and model ID 5678
 	// f1 := gousbmon.NewFilter().MatchVendorID("18D1")
 	// f2 := gousbmon.NewFilter().MatchVendorID("1234").MatchModelID("5678")
-	// monitor, err := gousbmon.New(gousbmon.WithFilters(f1, f2))
+	// monitor, err := gousbmon.NewMonitor(gousbmon.WithFilters(f1, f2))
 	if err != nil {
 		log.Fatalf("failed to create USB monitor: %v", err)
 	}
