@@ -13,7 +13,7 @@ import (
 func main() {
 	monitor, err := gousbmon.NewMonitor()
 
-	// New Filter API: Create a Filter and add criteria
+	// Create a Filter and add criteria
 	// f := gousbmon.NewFilter().MatchVendorID("18d1")
 	// monitor, err := gousbmon.NewMonitor(gousbmon.WithFilters(f))
 
