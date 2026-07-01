@@ -8,22 +8,31 @@ import (
 	"syscall"
 
 	"github.com/LemonSkin/gousbmon"
-	"github.com/LemonSkin/gousbmon/device"
 )
 
 func main() {
-	monitor, err := gousbmon.New()
-	// You can also add a new filter, e.g.: Filter devices with VID=18D1
-	// monitor, err := gousbmon.New(filter.MatchVendorID("18D1"))
+	monitor, err := gousbmon.NewMonitor()
 
-	// OR filters together, e.g.: Filter devices with Interface=HID || VID=18D1
-	// monitor, err := gousbmon.New(filter.MatchUSBInterfaces("HID"), filter.MatchVendorID("18D1"))
+	// New Filter API: Create a Filter and add criteria
+	// f := gousbmon.NewFilter().MatchVendorID("18d1")
+	// monitor, err := gousbmon.NewMonitor(gousbmon.WithFilters(f))
 
-	// AND filters together, e.g.: Filter devices with Interface=HID && VID=18D1
-	// monitor, err := gousbmon.New(filter.MatchAll(filter.MatchUSBInterfaces("HID"), filter.MatchVendorID("18D1")))
+	// AND filters together: Add multiple criteria to a single filter
+	// Match devices with USB interface "HID" AND vendor ID "18D1"
+	// f := gousbmon.NewFilter().MatchUSBInterfaces("HID").MatchVendorID("18D1")
+	// monitor, err := gousbmon.New(gousbmon.WithFilters(f))
 
-	// AND/OR wombocombo, e.g.: Filter devices with (VID=18D1) || (VID=1234 && ModelID=5678)
-	// monitor, err := gousbmon.New(filter.MatchVendorID("18D1"), filter.MatchAll(filter.MatchVendorID("1234"), filter.MatchModelID("5678")))
+	// OR filters together: Add multiple filters to match different criteria
+	// Match devices with USB interface "HID" OR vendor ID "18D1"
+	// f1 := gousbmon.NewFilter().MatchUSBInterfaces("HID")
+	// f2 := gousbmon.NewFilter().MatchVendorID("18D1")
+	// monitor, err := gousbmon.New(gousbmon.WithFilters(f1, f2))
+
+	// AND/OR wombocombo: Combine the above to create more complex filters
+	// Match devices with vendor ID 18D1 OR devices with vendor ID 1234 and model ID 5678
+	// f1 := gousbmon.NewFilter().MatchVendorID("18D1")
+	// f2 := gousbmon.NewFilter().MatchVendorID("1234").MatchModelID("5678")
+	// monitor, err := gousbmon.New(gousbmon.WithFilters(f1, f2))
 	if err != nil {
 		log.Fatalf("failed to create USB monitor: %v", err)
 	}
@@ -40,7 +49,7 @@ func main() {
 
 	// Example 2: Monitor for device connections/disconnections
 	// Define callback functions
-	onConnect := func(deviceID string, deviceInfo device.Info) {
+	onConnect := func(deviceID string, deviceInfo gousbmon.DeviceInfo) {
 		fmt.Printf("Connected: %s - %s (%s - %s)\n",
 			deviceID,
 			deviceInfo.IDModel,
@@ -49,7 +58,7 @@ func main() {
 		)
 	}
 
-	onDisconnect := func(deviceID string, deviceInfo device.Info) {
+	onDisconnect := func(deviceID string, deviceInfo gousbmon.DeviceInfo) {
 		fmt.Printf("Disconnected: %s - %s (%s - %s)\n",
 			deviceID,
 			deviceInfo.IDModel,
@@ -72,12 +81,10 @@ func main() {
 
 	log.Println("Monitoring USB devices... Press Ctrl+C to stop.")
 
-	// Wait for interrupt
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh
 
-	// Clean shutdown
 	monitor.StopMonitoring()
 	log.Println("Monitoring stopped.")
 }

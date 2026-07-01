@@ -28,12 +28,12 @@ func buildDevName(busnum, devnum int) string {
 }
 
 // infoFromProperties maps a udev / sd-device property set (ID_*, DEVNAME, DEVTYPE) to a normalised device.Info.
-func infoFromProperties(props map[string]string) device.Info {
+func infoFromProperties(props map[string]string) device.DeviceInfo {
 	serial := props["ID_SERIAL_SHORT"]
 	if serial == "" {
 		serial = props["ID_SERIAL"]
 	}
-	return device.Info{
+	return device.DeviceInfo{
 		IDVendorID:             strings.ToLower(props["ID_VENDOR_ID"]),
 		IDVendor:               props["ID_VENDOR"],
 		IDModel:                props["ID_MODEL"],

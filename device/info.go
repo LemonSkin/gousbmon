@@ -2,8 +2,8 @@
 // platform backends implement.
 package device
 
-// Info holds the normalised attributes of a USB device.
-type Info struct {
+// DeviceInfo holds the normalised attributes of a USB device.
+type DeviceInfo struct {
 	IDVendorID             string
 	IDVendor               string
 	IDModel                string
@@ -20,5 +20,5 @@ type Info struct {
 
 // Detector is implemented by each platform-specific backend. It returns the raw set of currently connected USB devices.
 type Detector interface {
-	GetAvailableDevices() (map[string]Info, error)
+	GetAvailableDevices() (map[string]DeviceInfo, error)
 }

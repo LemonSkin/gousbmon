@@ -3,11 +3,13 @@
 package platform
 
 import (
+	"errors"
+	"log/slog"
+
 	"github.com/LemonSkin/gousbmon/device"
-	"github.com/LemonSkin/gousbmon/internal/errors"
 )
 
 // New returns the macOS USB detector.
-func New() (device.Detector, error) {
-	return nil, errors.ErrUnsupportedPlatform
+func New(_ *slog.Logger) (device.Detector, error) {
+	return nil, errors.New("gousbmon: platform not supported")
 }

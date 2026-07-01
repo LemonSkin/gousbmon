@@ -154,7 +154,7 @@ func TestToDeviceInfo(t *testing.T) {
 
 // TestNew tests the platform-specific constructor.
 func TestNew(t *testing.T) {
-	d, err := New()
+	d, err := New(nil)
 	if err != nil {
 		t.Fatalf("New() returned error: %v", err)
 	}

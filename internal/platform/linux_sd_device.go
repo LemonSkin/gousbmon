@@ -11,9 +11,10 @@ import "C"
 
 import (
 	"fmt"
+	"log/slog"
 	"unsafe"
 
-	"github.com/LemonSkin/gousbmon/device"
+	"github.com/LemonSkin/gousbmon/internal/device"
 )
 
 // udevPropertyKeys are the udev/hwdb property names read for each device. DEVNAME and DEVTYPE are read via dedicated
@@ -33,12 +34,17 @@ var udevPropertyKeys = []string{
 }
 
 // sdDeviceDetector implements device.Detector using libsystemd's sd-device.
-type sdDeviceDetector struct{}
+type sdDeviceDetector struct {
+	log *slog.Logger
+}
 
 // New returns the Linux USB detector.
-func New() (device.Detector, error) {
-	fmt.Printf("Using sd_device detector\n")
-	return &sdDeviceDetector{}, nil
+func New(logger *slog.Logger) (device.Detector, error) {
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
+	}
+	logger.Debug("Creating sd_device detector")
+	return &sdDeviceDetector{log: logger}, nil
 }
 
 func (d *sdDeviceDetector) GetAvailableDevices() (map[string]device.Info, error) {

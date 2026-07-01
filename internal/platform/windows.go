@@ -5,6 +5,7 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"unsafe"
@@ -61,11 +62,17 @@ var (
 )
 
 // windowsDetector implements device.Detector for Windows.
-type windowsDetector struct{}
+type windowsDetector struct {
+	log *slog.Logger
+}
 
 // New returns the Windows USB detector.
-func New() (device.Detector, error) {
-	return &windowsDetector{}, nil
+func New(logger *slog.Logger) (device.Detector, error) {
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
+	}
+	logger.Debug("Creating windows detector")
+	return &windowsDetector{log: logger}, nil
 }
 
 // winDevice holds the raw device properties read from SetupAPI before they are normalised into a device.Info.
@@ -80,7 +87,7 @@ type winDevice struct {
 	CompatibleID []string
 }
 
-func (d *windowsDetector) GetAvailableDevices() (map[string]device.Info, error) {
+func (d *windowsDetector) GetAvailableDevices() (map[string]device.DeviceInfo, error) {
 	// Restrict enumeration to the "USB" enumerator and to devices that are currently present.
 	enumerator, err := windows.UTF16PtrFromString("USB")
 	if err != nil {
@@ -98,7 +105,7 @@ func (d *windowsDetector) GetAvailableDevices() (map[string]device.Info, error) 
 	}
 	defer procSetupDiDestroyDeviceInfoList.Call(hDevInfo)
 
-	result := make(map[string]device.Info)
+	result := make(map[string]device.DeviceInfo)
 	for index := uint32(0); ; index++ {
 		var did spDevInfoData
 		did.cbSize = uint32(unsafe.Sizeof(did))
@@ -245,8 +252,8 @@ func isNonUSBDevice(pnpDeviceID string) bool {
 	return false
 }
 
-func toDeviceInfo(dev winDevice) device.Info {
-	info := device.Info{
+func toDeviceInfo(dev winDevice) device.DeviceInfo {
+	info := device.DeviceInfo{
 		IDModel:                dev.Name,
 		IDModelFromDatabase:    dev.Caption,
 		IDVendor:               dev.Name,

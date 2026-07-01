@@ -4,6 +4,7 @@ package platform
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -19,21 +20,25 @@ const defaultSysfsRoot = "/sys/bus/usb/devices"
 type sysfsDetector struct {
 	root string
 	ids  *usbIDs
+	log  *slog.Logger
 }
 
 // New returns the Linux USB detector.
-func New() (device.Detector, error) {
-	fmt.Printf("Using sysfs detector\n")
-	return &sysfsDetector{root: defaultSysfsRoot, ids: loadUSBIDs()}, nil
+func New(logger *slog.Logger) (device.Detector, error) {
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
+	}
+	logger.Debug("Creating sysfs detector")
+	return &sysfsDetector{root: defaultSysfsRoot, ids: loadUSBIDs(), log: logger}, nil
 }
 
-func (d *sysfsDetector) GetAvailableDevices() (map[string]device.Info, error) {
+func (d *sysfsDetector) GetAvailableDevices() (map[string]device.DeviceInfo, error) {
 	entries, err := os.ReadDir(d.root)
 	if err != nil {
 		return nil, fmt.Errorf("gousbmon: read %s: %w", d.root, err)
 	}
 
-	result := make(map[string]device.Info)
+	result := make(map[string]device.DeviceInfo)
 	for _, entry := range entries {
 		name := entry.Name()
 		// Interfaces (e.g. "1-1:1.0") contain a colon, only want device nodes
@@ -129,9 +134,9 @@ func readSysfsInterfaces(dir, sysname string) []sysfsInterface {
 	return ifaces
 }
 
-// sysfsToDeviceInfo normalises a raw sysfs device into a device.Info.
-func sysfsToDeviceInfo(dev sysfsDevice, ids *usbIDs) device.Info {
-	info := device.Info{
+// sysfsToDeviceInfo normalises a raw sysfs device into a device.DeviceInfo.
+func sysfsToDeviceInfo(dev sysfsDevice, ids *usbIDs) device.DeviceInfo {
+	info := device.DeviceInfo{
 		IDVendorID:           dev.idVendor,
 		IDModelID:            dev.idProduct,
 		IDVendor:             dev.manufacturer,

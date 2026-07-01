@@ -11,18 +11,24 @@ import "C"
 
 import (
 	"fmt"
+	"log/slog"
 	"unsafe"
 
 	"github.com/LemonSkin/gousbmon/device"
 )
 
 // udevDetector implements device.Detector using libudev.
-type udevDetector struct{}
+type udevDetector struct {
+	log *slog.Logger
+}
 
 // New returns the Linux USB detector.
-func New() (device.Detector, error) {
-	fmt.Printf("Using udev detector\n")
-	return &udevDetector{}, nil
+func New(logger *slog.Logger) (device.Detector, error) {
+	if logger == nil {
+		logger = slog.New(slog.DiscardHandler)
+	}
+	logger.Debug("Creating udev detector")
+	return &udevDetector{log: logger}, nil
 }
 
 func (d *udevDetector) GetAvailableDevices() (map[string]device.Info, error) {

@@ -201,7 +201,7 @@ func TestGetAvailableDevices_BadRoot(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	d, err := New()
+	d, err := New(nil)
 	if err != nil {
 		t.Fatalf("New() returned error: %v", err)
 	}
@@ -210,7 +210,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func keysOf(m map[string]device.Info) []string {
+func keysOf(m map[string]device.DeviceInfo) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
